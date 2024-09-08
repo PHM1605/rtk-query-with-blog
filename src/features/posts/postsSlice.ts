@@ -53,7 +53,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
 })
 
 export const {useGetPostsQuery} = extendedApiSlice;
-export const selectPostsResult = extendedApiSlice.endpoints.getPosts.select()
+export const selectPostsResult = extendedApiSlice.endpoints.getPosts.select('Post') // OR "LIST ?!?
 const selectPostsData = createSelector(
   selectPostsResult,
   postsResult => postsResult.data // normalized state object with ids & entities
@@ -63,4 +63,4 @@ export const {
   selectAll: selectAllPosts,
   selectById: selectPostById,
   selectIds: selectPostIds
-} = postsAdapter.getSelectors<RootState>(state => state.posts)
+} = postsAdapter.getSelectors<RootState>(state => selectPostsData(state) ?? initialState) // if postsData is null => take initialState
