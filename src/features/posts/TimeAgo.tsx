@@ -8,7 +8,7 @@ const TimeAgo=({timeStamp}:{timeStamp:string}) => {
     timeAgo = `${timePeriod} ago`;
   }
   return (
-    <span title={timeStamp}>&nbsp; <i>timeAgo</i></span>
+    <span title={timeStamp}>&nbsp; <i>{timeAgo}</i></span>
   )
 }
 

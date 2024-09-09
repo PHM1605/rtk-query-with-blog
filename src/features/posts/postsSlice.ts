@@ -28,6 +28,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
       transformResponse: (responseData: IPost[]) => {
         let min = 1;
         const loadedPosts = responseData.map(post => {
+          post.userId = String(post.userId)
           if (!post?.date) post.date = sub(new Date(), {minutes:min++}).toISOString();
           if (!post?.reactions) post.reactions = {
             thumbsUp: 0,
@@ -118,29 +119,35 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
       ]
     }),
     addReaction: builder.mutation({
-      query: ({ postId, reactions }: {postId:string, reactions:{[reaction:string]: number}}) => ({
-        url: `posts/${postId}`,
-        method: 'PATCH',
-        // In a real app, we'd need to base this on userId so that a user can't "like" a post more than once
-        body: {reactions}
+      query: ({ postId, reactions }) => ({
+          url: `posts/${postId}`,
+          method: 'PATCH',
+          // In a real app, we'd probably need to base this on user ID somehow
+          // so that a user can't do the same reaction more than once
+          body: { reactions }
       }),
-      // first object: same as above; second object: method we can use and a promise
-      // purpose: instantly update the "post" reaction count to +1 to give nicer UI; if not success then we "undo" it
-      // notice: no "invalidatesTags" as we don't want to refetch the Reaction List again; but directly update the State (database will still be updated though)
-      async onQueryStarted({postId, reactions}, {dispatch, queryFulfilled}) {
-        const patchResult = dispatch(
-          // 1st argument: endpoint; 2nd argument: cache key
-          extendedApiSlice.util.updateQueryData('getPosts', undefined, draft => {
-            const post = draft.entities[postId]
-            if (post) post.reactions = reactions
-          })
-        )
-        try {
-          await queryFulfilled
-        } catch {
-          patchResult.undo();
-        }
-      }
+      invalidatesTags: (resule, error, arg) => [
+        { type: 'Post' as const, id: arg.postId}
+      ]
+      // async onQueryStarted({ postId, reactions }, { dispatch, queryFulfilled }) {
+      //   // `updateQueryData` requires the endpoint name and cache key arguments,
+      //   // so it knows which piece of cache state to update
+      //   const patchResult = dispatch(
+      //     extendedApiSlice.util.updateQueryData('getPosts', undefined, draft => {
+      //       // The `draft` is Immer-wrapped and can be "mutated" like in createSlice
+      //       const post = draft.entities[postId]
+      //       console.log("TEST:", post)
+      //       if (post) post.reactions = reactions
+      //     })
+      //   )
+      //   console.log("DISPATCH", dispatch)
+      //   console.log("PATCH RES:", patchResult)
+      //   try {          
+      //     await queryFulfilled
+      //   } catch {
+      //     patchResult.undo()
+      //   }
+      // }
     })
   })
 })
